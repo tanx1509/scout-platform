@@ -405,26 +405,31 @@ export function CandidateTable({
                       </div>
                     </TableCell>
                   </TableRow>
-                                    {expandedIds.has(candidate.id) && (
+                  {expandedIds.has(candidate.id) && (
                     <TableRow className="bg-muted/30 border-b border-border/20">
                       <TableCell colSpan={9} className="p-0">
-                        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in slide-in-from-top-2 fade-in duration-200 overflow-hidden">
+                        <div
+                          className="p-4 animate-in slide-in-from-top-2 fade-in duration-200"
+                          style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)', gap: '1.5rem' }}
+                        >
                           
-                          <div className="space-y-2 min-w-0">
-                            <h4 className="text-sm font-semibold">Evaluation Summary</h4>
-                            <p className="text-xs text-muted-foreground line-clamp-6">
+                          {/* Col 1: Evaluation Summary */}
+                          <div className="overflow-hidden space-y-2">
+                            <h4 className="text-sm font-semibold truncate">Evaluation Summary</h4>
+                            <p className="text-xs text-muted-foreground line-clamp-5">
                               {candidate.matches?.[0]?.summary || "No AI evaluation summary available yet."}
                             </p>
                           </div>
                           
-                          <div className="space-y-2 min-w-0">
-                            <h4 className="text-sm font-semibold">Key Evidence</h4>
+                          {/* Col 2: Key Evidence */}
+                          <div className="overflow-hidden space-y-2">
+                            <h4 className="text-sm font-semibold truncate">Key Evidence</h4>
                             {candidate.matches?.[0]?.evidence ? (
                               <ul className="text-xs space-y-1">
                                 {(candidate.matches[0].evidence as any[]).slice(0, 3).map((e: any, i: number) => (
-                                  <li key={i} className="flex gap-2 min-w-0">
-                                    <span className="text-green-600 shrink-0">✓</span>
-                                    <span className="min-w-0"><span className="font-medium">{e.component}:</span>{" "}<span className="break-words">{e.fact}</span></span>
+                                  <li key={i} className="flex gap-1.5 overflow-hidden">
+                                    <span className="text-green-500 shrink-0 mt-0.5">✓</span>
+                                    <span className="line-clamp-2"><span className="font-medium">{e.component}:</span>{" "}{e.fact}</span>
                                   </li>
                                 ))}
                               </ul>
@@ -433,27 +438,27 @@ export function CandidateTable({
                             )}
                           </div>
                           
-                          <div className="space-y-2 min-w-0">
-                            <h4 className="text-sm font-semibold">Risks &amp; Interview Focus</h4>
+                          {/* Col 3: Risks & Interview Focus */}
+                          <div className="overflow-hidden space-y-2">
+                            <h4 className="text-sm font-semibold truncate">Risks &amp; Interview Focus</h4>
                             {candidate.matches?.[0]?.risks ? (
                               <ul className="text-xs space-y-1 mb-2">
                                 {(candidate.matches[0].risks as any[]).slice(0, 2).map((r: any, i: number) => (
-                                  <li key={i} className="flex gap-2 text-amber-700 dark:text-amber-400 min-w-0">
-                                    <span className="shrink-0">⚠️</span>
-                                    <span className="break-words">{r.reason}</span>
+                                  <li key={i} className="flex gap-1.5 text-amber-600 dark:text-amber-400 overflow-hidden">
+                                    <span className="shrink-0 mt-0.5">⚠</span>
+                                    <span className="line-clamp-2">{r.reason}</span>
                                   </li>
                                 ))}
                               </ul>
                             ) : null}
-                            
                             {candidate.matches?.[0]?.interviewFocus ? (
-                              <div className="mt-2">
+                              <div>
                                 <h5 className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Suggested Questions</h5>
                                 <ul className="text-xs space-y-1">
                                   {(candidate.matches[0].interviewFocus as string[]).slice(0, 2).map((q: string, i: number) => (
-                                    <li key={i} className="flex gap-1.5 text-muted-foreground min-w-0">
+                                    <li key={i} className="flex gap-1.5 text-muted-foreground overflow-hidden">
                                       <span className="shrink-0">•</span>
-                                      <span className="line-clamp-2" title={q}>{q}</span>
+                                      <span className="line-clamp-2">{q}</span>
                                     </li>
                                   ))}
                                 </ul>
