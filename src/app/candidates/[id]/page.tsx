@@ -252,18 +252,24 @@ export default function CandidateDetailPage({
                     });
                     const data = await res.json();
                     if (res.ok) {
-                      toast.success(`Interview scheduled ${data.demoMode ? '(Demo Mode)' : ''}`, { id: toastId });
+                      const result = data.results?.[0];
+                      const emailSent = result?.emailSent;
+                      toast.success(
+                        emailSent
+                          ? `✅ Email sent directly to candidate!`
+                          : `Interview scheduled — opening Gmail compose...`,
+                        { id: toastId }
+                      );
                       await fetch(`/api/candidates/${candidate.id}/status`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ status: "INTERVIEW", action: "Triggered Interview" })
                       });
                       fetchCandidate();
-                      
-                      // Open the pre-filled Gmail compose window
-                      const composeUrl = data.results?.[0]?.gmailComposeUrl;
-                      if (composeUrl) {
-                        window.open(composeUrl, '_blank');
+
+                      // Only open compose if direct send failed
+                      if (!emailSent && result?.gmailComposeUrl) {
+                        window.open(result.gmailComposeUrl, '_blank');
                       }
                     } else {
                       toast.error("Failed to schedule interview", { id: toastId });
