@@ -77,7 +77,6 @@ export class EvaluatorAgent implements Agent {
         CRITICAL: ONLY return valid JSON. Do not include markdown formatting or backticks around the JSON.
       `;
 
-      let output: any;
 
       // Deterministic fallback evaluation using multiple candidate signals
       const getDeterministicFallback = () => {
@@ -155,19 +154,33 @@ export class EvaluatorAgent implements Agent {
 
       
 
+      let output: any;
+      let success = false;
+      const MAX_RETRIES = 3;
+
       if (process.env.AI_PROVIDER) {
-        try {
-          const text = await aiProvider.generateText(prompt, "", false);
-          // Clean up markdown just in case the provider wrapped it
-          const cleanedText = text.replace(/```json\n/g, '').replace(/```\n/g, '').replace(/```/g, '');
-          output = JSON.parse(cleanedText);
-          output.fallbackUsed = false;
-          reasoning.push(`Successfully generated LLM evaluation using ${process.env.AI_PROVIDER}.`);
-        } catch (e) {
-          console.error("Evaluation failed, falling back:", e);
-          output = getDeterministicFallback();
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const text = await aiProvider.generateText(prompt, "", false);
+            // Clean up markdown just in case the provider wrapped it
+            const cleanedText = text.replace(/```json\n/g, '').replace(/```\n/g, '').replace(/```/g, '');
+            output = JSON.parse(cleanedText);
+            output.fallbackUsed = false;
+            success = true;
+            reasoning.push(`Successfully generated LLM evaluation using ${process.env.AI_PROVIDER} on attempt ${attempt}.`);
+            break; // Exit retry loop on success
+          } catch (e) {
+            console.error(`Evaluation failed on attempt ${attempt}:`, e);
+            if (attempt < MAX_RETRIES) {
+              // Wait with exponential backoff (e.g., 2s, 4s) to respect rate limits
+              await new Promise(res => setTimeout(res, 2000 * Math.pow(2, attempt - 1)));
+            }
+          }
         }
-      } else {
+      }
+
+      if (!success) {
+        console.warn(`All ${MAX_RETRIES} AI attempts failed, falling back to deterministic.`);
         output = getDeterministicFallback();
       }
 

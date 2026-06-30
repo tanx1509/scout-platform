@@ -260,9 +260,10 @@ export default function CandidateDetailPage({
                       });
                       fetchCandidate();
                       
-                      // Direct the user to their Gmail Drafts to review and send the drafted email
-                      if (!data.demoMode) {
-                        window.open('https://mail.google.com/mail/u/0/#drafts', '_blank');
+                      // Open the pre-filled Gmail compose window
+                      const composeUrl = data.results?.[0]?.gmailComposeUrl;
+                      if (composeUrl) {
+                        window.open(composeUrl, '_blank');
                       }
                     } else {
                       toast.error("Failed to schedule interview", { id: toastId });
@@ -443,29 +444,29 @@ export default function CandidateDetailPage({
             </CardContent>
           </Card>
 
-          {/* 5. Resume Raw */}
-          <Card className="border-border/40 shadow-sm glass bg-card/40">
-            <CardHeader className="pb-3 border-b border-border/40">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                Raw Resume Extract
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {candidate.resume?.rawText ? (
-                <ScrollArea className="h-[400px] w-full p-4 bg-muted/10">
-                  <pre className="text-[11px] whitespace-pre-wrap font-mono text-muted-foreground leading-relaxed">
-                    {candidate.resume.rawText}
-                  </pre>
-                </ScrollArea>
-              ) : (
-                <div className="flex flex-col items-center py-10 gap-3 text-center">
-                  <AlertCircle className="h-8 w-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">Raw text unavailable</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* 5. Resume Raw — only shown when parseable plain text was extracted */}
+          {(() => {
+            const raw = candidate.resume?.rawText;
+            const isReadable = raw && !raw.startsWith('%PDF') && !raw.startsWith('stream') && raw.trim().length > 50;
+            if (!isReadable) return null;
+            return (
+              <Card className="border-border/40 shadow-sm glass bg-card/40">
+                <CardHeader className="pb-3 border-b border-border/40">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Parsed Resume Text
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[400px] w-full p-4 bg-muted/10">
+                    <pre className="text-[11px] whitespace-pre-wrap font-mono text-muted-foreground leading-relaxed">
+                      {raw}
+                    </pre>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
         </div>
       </div>

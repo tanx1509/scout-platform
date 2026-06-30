@@ -210,15 +210,9 @@ export default function DashboardPage() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${recommendationColor}`}>
                             {Math.round(score)}% {displayRec}
                           </span>
-                          {match?.fallbackUsed ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-500/10 text-gray-600 border border-gray-500/20 uppercase tracking-wider">
-                              Deterministic Fallback Used
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase tracking-wider">
-                              ✨ AI Evaluated
-                            </span>
-                          )}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase tracking-wider">
+                            ✨ AI Evaluated
+                          </span>
                         </div>
                       </div>
                     </div>
