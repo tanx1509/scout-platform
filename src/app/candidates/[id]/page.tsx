@@ -113,7 +113,7 @@ export default function CandidateDetailPage({
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-muted-foreground">Candidate not found.</p>
-        <Button variant="ghost" render={<Link href="/candidates" />} className="mt-4">
+        <Button variant="ghost" nativeButton={false} render={<Link href="/candidates" />} className="mt-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Candidates
         </Button>
@@ -146,7 +146,7 @@ export default function CandidateDetailPage({
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-12">
       {/* Back navigation */}
-      <Button variant="ghost" size="sm" render={<Link href="/candidates" />} className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
+      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/candidates" />} className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" />
         Back to Candidates
       </Button>
@@ -195,12 +195,12 @@ export default function CandidateDetailPage({
 
           <div className="flex gap-2 pt-2">
             {candidate.githubProfile && (
-              <Button size="sm" variant="outline" className="gap-2 h-8" render={<a href={candidate.githubProfile} target="_blank" />}>
+              <Button size="sm" variant="outline" nativeButton={false} className="gap-2 h-8" render={<a href={candidate.githubProfile} target="_blank" />}>
                 <Code className="h-3 w-3"/> GitHub
               </Button>
             )}
             {candidate.resume?.sourceUrl && (
-              <Button size="sm" variant="outline" className="gap-2 h-8" render={<a href={candidate.resume.sourceUrl} target="_blank" />}>
+              <Button size="sm" variant="outline" nativeButton={false} className="gap-2 h-8" render={<a href={candidate.resume.sourceUrl} target="_blank" />}>
                 <ExternalLink className="h-3 w-3"/> Resume
               </Button>
             )}

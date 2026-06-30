@@ -46,9 +46,14 @@ function Button({
   size = "default",
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // If we are passing a custom render element (like <Link> or <a>), we must tell 
+  // Base UI not to expect a native <button> to prevent hydration warnings.
+  const isCustomRender = 'render' in props && props.render !== undefined;
+
   return (
     <ButtonPrimitive
       data-slot="button"
+      nativeButton={isCustomRender ? false : props.nativeButton}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
