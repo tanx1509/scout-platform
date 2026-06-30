@@ -9,7 +9,9 @@ export function ComparisonModal({ candidates, matches, jobId }: { candidates: an
   const [verdict, setVerdict] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  if (candidates.length < 2) return null;
+  if (candidates.length < 2) {
+    return <Button variant="outline" disabled title="Need at least 2 evaluated candidates to compare">Compare Candidates</Button>;
+  }
 
   const handleGenerateVerdict = async () => {
     setLoading(true);
