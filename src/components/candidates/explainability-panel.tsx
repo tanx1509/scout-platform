@@ -54,14 +54,22 @@ export function ExplainabilityPanel({ match, children, defaultOpen = false }: { 
         if (typeof item === 'string') {
           ev.technical.push(item);
         } else if (item?.component && item?.fact) {
-          const comp = item.component.toLowerCase();
-          if (comp.includes('test') || comp.includes('assess')) ev.assessment.push(item.fact);
+          if (comp.includes('test') || comp.includes('assess')) {
+            ev.assessment.push(item.fact);
+            ev.technical.push(`Verified via Assessment: ${item.fact}`);
+          }
           else if (comp.includes('proj')) ev.projects.push(item.fact);
-          else if (comp.includes('git')) ev.github.push(item.fact);
+          else if (comp.includes('git')) {
+            ev.github.push(item.fact);
+            ev.technical.push(`Verified via GitHub: ${item.fact}`);
+          }
           else if (comp.includes('research')) ev.research.push(item.fact);
           else ev.technical.push(`${item.component}: ${item.fact}`); // Fallback for Education, etc.
         }
       });
+      
+      // Deduplicate technical evidence
+      ev.technical = Array.from(new Set(ev.technical)).slice(0, 3); // Max 3 to not overcrowd
     } else {
       ev = rawEv;
     }
