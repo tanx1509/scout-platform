@@ -1,0 +1,456 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ResumeStatus {
+  PENDING
+  PROCESSING
+  PARSED
+  FAILED
+}
+
+enum MatchStatus {
+  APPLIED
+  SCREENING
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+}
+
+enum SectionType {
+  EDUCATION
+  EXPERIENCE
+  PROJECTS
+  SKILLS
+  ACHIEVEMENTS
+  RESEARCH
+  CERTIFICATIONS
+  LANGUAGES
+  SUMMARY
+  OBJECTIVE
+  OTHER
+}
+
+enum FileStatus {
+  UPLOADING
+  READY
+  PROCESSING
+  FAILED
+  DELETED
+}
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+  HIRING_MANAGER
+  INTERVIEWER
+  PENDING
+}
+
+model Candidate {
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    
+  phone               String?
+  college             String?
+  branch              String?
+  cgpa                Float?
+  bestAiProject       String?
+  researchWork        String?
+  githubProfile       String?
+  linkedinProfile     String?
+  source              String    @default("Direct")
+  profileCompleteness Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  resume              Resume?
+  profile             CandidateProfile?
+  matches             JobMatch[]
+  notes               Note[]
+  labels              CandidateLabel[]
+  githubCache         GithubCache?
+  assessments         Assessment[]
+  interviews          Interview[]
+  storedFiles         StoredFile[]
+  importRecord        ImportRecord?
+
+  @@index([email])
+  @@index([createdAt])
+  @@map("candidates")
+}
+
+model ImportBatch {
+  id          String   @id @default(uuid())
+  fileName    String?
+  source      String   @default("UI_UPLOAD")
+  createdAt   DateTime @default(now())
+
+  records     ImportRecord[]
+
+  @@map("import_batches")
+}
+
+model ImportRecord {
+  id            String   @id @default(uuid())
+  batchId       String
+  candidateId   String?  @unique
+  datasetRow    String?  
+  status        String   @default("IMPORTED") 
+  createdAt     DateTime @default(now())
+
+  batch         ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  candidate     Candidate?  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  warnings      ImportWarning[]
+
+  @@unique([batchId, datasetRow])
+  @@map("import_records")
+}
+
+model ImportWarning {
+  id          String   @id @default(uuid())
+  recordId    String
+  issueType   String   
+  message     String
+  severity    String   @default("WARNING")
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  record      ImportRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  @@index([recordId])
+  @@map("import_warnings")
+}
+
+model StoredFile {
+  id               String      @id @default(uuid())
+  candidateId      String?
+  assessmentId     String?
+  bucket           String
+  storagePath      String
+  originalFilename String
+  mimeType         String
+  sizeBytes        Int
+  checksum         String?
+  uploadedBy       String?
+  status           FileStatus  @default(UPLOADING)
+  uploadedAt       DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  candidate        Candidate?  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  // We can add assessment relation if Assessment model is defined below
+
+  @@index([bucket])
+  @@index([status])
+  @@index([candidateId])
+  @@map("stored_files")
+}
+
+model Resume {
+  id                String       @id @default(uuid())
+  candidateId       String       @unique
+  sourceUrl         String?
+  fileName          String?
+  rawText           String?
+  status            ResumeStatus @default(PENDING)
+  parsingConfidence  Int?        
+  errorMessage      String?
+  parsedAt          DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  candidate         Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  sections          ResumeSection[]
+
+  @@map("resumes")
+}
+
+model ResumeSection {
+  id            String      @id @default(uuid())
+  resumeId      String
+  sectionType   SectionType
+  rawContent    String
+  parsedContent Json?
+  confidence    Int         @default(0)
+  orderIndex    Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  resume        Resume      @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@map("resume_sections")
+}
+
+model CandidateProfile {
+  id             String   @id @default(uuid())
+  candidateId    String   @unique
+  personalInfo   Json?    
+  education      Json?    
+  experience     Json?    
+  projects       Json?    
+  skills         Json?    
+  research       Json?    
+  achievements   Json?    
+  certifications Json?    
+  languages      Json?    
+  timeline       Json?    
+  manualReview   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  candidate      Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@map("candidate_profiles")
+}
+
+
+
+model Job {
+  id               String   @id @default(uuid())
+  title            String
+  department       String?
+  recruiterName    String?  @default("System")
+  rawText          String
+  structuredData   Json?    
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  matches          JobMatch[]
+  assessments      Assessment[]
+  interviews       Interview[]
+  analysis         JobAnalysis?
+
+  @@map("jobs")
+}
+
+model JobAnalysis {
+  id              String   @id @default(uuid())
+  jobId           String   @unique
+  deterministic   Json     // Word count, reading level, req count, etc.
+  llmReasoning    Json     // Ambiguous wording, inclusiveness, suggestions
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_analyses")
+}
+
+model JobMatch {
+  id                 String         @id @default(uuid())
+  jobId              String
+  candidateId        String
+  status             MatchStatus    @default(APPLIED)
+  overallScore       Float?
+  technicalScore     Float?
+  projectScore       Float?
+  researchScore      Float?
+  resumeScore        Float?
+  assessmentScore    Float?
+  githubScore        Float?
+  communicationScore Float?
+  educationScore     Float?
+  jdAlignmentScore   Float?
+  riskPenalty        Float?
+  fallbackUsed       Boolean?       @default(false)
+  
+  recommendation     String?        // e.g., "Strong Hire", "Do Not Proceed"
+  confidence         Int?           // 0-100%
+  hiringRank         Int?           
+  
+  evidence           Json?          // Array of evidence objects mapping score components to facts
+  risks              Json?          // Array of risk objects (Severity, Reason, Mitigation)
+  interviewFocus     Json?          // Array of suggested interview questions
+  summary            String?        // 100-word candidate summary
+  
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  job                Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate          Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, candidateId])
+  @@index([status])
+  @@index([candidateId])
+  @@index([hiringRank])
+  @@map("job_matches")
+}
+
+model GithubCache {
+  id          String    @id @default(uuid())
+  candidateId String    @unique
+  data        Json
+  updatedAt   DateTime  @updatedAt
+
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@map("github_cache")
+}
+
+model Label {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+
+  candidates CandidateLabel[]
+
+  @@map("labels")
+}
+
+model CandidateLabel {
+  id          String    @id @default(uuid())
+  candidateId String
+  labelId     String
+  createdAt   DateTime  @default(now())
+
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  label       Label     @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, labelId])
+  @@map("candidate_labels")
+}
+
+model Note {
+  id          String    @id @default(uuid())
+  candidateId String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model AgentActivity {
+  id                  String   @id @default(uuid())
+  candidateId         String?
+  jobId               String?
+  agentName           String
+  event               String
+  toolsUsed           Json?
+  confidence          Float?
+  executionTimeMs     Int
+  requiresHumanReview Boolean  @default(false)
+  output              Json?
+  timestamp           DateTime @default(now())
+
+  @@map("agent_activities")
+}
+
+model Assessment {
+  id              String   @id @default(uuid())
+  candidateId     String
+  jobId           String
+  logicalScore    Int?
+  codingScore     Int?
+  score           Float?
+  status          String   @default("PENDING")
+  attempt         Int      @default(1)
+  submittedAt     DateTime?
+  fileUrl         String?
+  rawContent      String?
+  feedback        Json?    
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("assessments")
+}
+
+model Interview {
+  id              String   @id @default(uuid())
+  candidateId     String
+  jobId           String
+  scheduledAt     DateTime?
+  meetLink        String?
+  status          String    @default("SCHEDULED")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("interviews")
+}
+
+// ============================================
+// Auth.js & User Management
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(PENDING)
+  accounts      Account[]
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  ip        String?
+  userAgent String?
+  timestamp DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
