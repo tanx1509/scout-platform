@@ -514,7 +514,7 @@ export function UploadModal({
               )}
               
               <div className="flex items-center justify-between">
-                <Button variant="ghost" size="sm" onClick={reset}>
+                <Button variant="ghost" size="sm" onClick={reset} className="cursor-pointer">
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   Back
                 </Button>
@@ -525,7 +525,7 @@ export function UploadModal({
                       : validation.validRows} of {validation.totalRows} will be imported
                   </span>
                   <Button
-                    className="gradient-brand text-white border-0"
+                    className="gradient-brand text-white border-0 cursor-pointer"
                     size="sm"
                     onClick={handleConfirmImport}
                     disabled={importWithDuplicates ? (validation.validRows + validation.duplicateRows === 0) : validation.validRows === 0}
@@ -558,6 +558,27 @@ export function UploadModal({
                 {importProgress}%
               </p>
             </div>
+          </div>
+        )}
+        {/* Step 4: Summary */}
+        {step === "success" && (
+          <div className="flex flex-col items-center justify-center py-12 gap-5 animate-in fade-in zoom-in duration-300">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10 border-4 border-green-500/20">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-2xl font-bold tracking-tight">Import Complete!</h3>
+              <p className="text-sm text-muted-foreground max-w-[350px] mx-auto">
+                Successfully imported <strong className="text-foreground">{importWithDuplicates ? (validation?.validRows || 0) + (validation?.duplicateRows || 0) : (validation?.validRows || 0)} candidates</strong>. 
+                Our autonomous AI agents have been deployed to parse resumes and evaluate them.
+              </p>
+            </div>
+            <Button 
+              className="mt-4 w-full sm:w-auto px-8 cursor-pointer" 
+              onClick={() => onOpenChange(false)}
+            >
+              Go to Dashboard
+            </Button>
           </div>
         )}
       </DialogContent>

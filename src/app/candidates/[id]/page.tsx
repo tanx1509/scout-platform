@@ -129,9 +129,9 @@ export default function CandidateDetailPage({
   const stage = match?.status || "APPLIED";
 
   const renderRecommendationColor = () => {
-    if (score >= 85) return "text-green-600 bg-green-50 border-green-200";
-    if (score >= 70) return "text-blue-600 bg-blue-50 border-blue-200";
-    return "text-yellow-600 bg-yellow-50 border-yellow-200";
+    if (score >= 85) return "text-green-500 bg-green-500/10 border-green-500/20";
+    if (score >= 70) return "text-blue-500 bg-blue-500/10 border-blue-500/20";
+    return "text-yellow-500 bg-yellow-500/10 border-yellow-500/20";
   };
 
   const renderStars = () => {
@@ -180,11 +180,11 @@ export default function CandidateDetailPage({
           <div className="flex flex-wrap gap-2 mt-2">
             {(() => {
               const tags = [];
-              if (score >= 90) tags.push({ label: "Top Talent", color: "bg-purple-100 text-purple-700 border-purple-200" });
-              if (candidate.githubProfile) tags.push({ label: "Open Source", color: "bg-blue-100 text-blue-700 border-blue-200" });
-              if (match?.technicalScore && match.technicalScore >= 85) tags.push({ label: "Strong Coder", color: "bg-green-100 text-green-700 border-green-200" });
-              if (candidate.branch?.toLowerCase().includes("computer") || candidate.branch?.toLowerCase().includes("software")) tags.push({ label: "CS Core", color: "bg-slate-100 text-slate-700 border-slate-200" });
-              if (tags.length === 0) tags.push({ label: "Needs Review", color: "bg-amber-100 text-amber-700 border-amber-200" });
+              if (score >= 90) tags.push({ label: "Top Talent", color: "bg-purple-500/10 text-purple-500 border-purple-500/20" });
+              if (candidate.githubProfile) tags.push({ label: "Open Source", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" });
+              if (match?.technicalScore && match.technicalScore >= 85) tags.push({ label: "Strong Coder", color: "bg-green-500/10 text-green-500 border-green-500/20" });
+              if (candidate.branch?.toLowerCase().includes("computer") || candidate.branch?.toLowerCase().includes("software")) tags.push({ label: "CS Core", color: "bg-slate-500/10 text-slate-400 border-slate-500/20" });
+              if (tags.length === 0) tags.push({ label: "Needs Review", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" });
               return tags.map((t, i) => (
                 <Badge key={i} variant="outline" className={`text-xs px-2 py-0.5 ${t.color}`}>
                   {t.label}
@@ -205,110 +205,113 @@ export default function CandidateDetailPage({
               </Button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-border/50 mt-4">
-            <Button 
-              size="sm" 
-              className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-              onClick={async () => {
-                const toastId = toast.loading("Moving to interview...");
-                try {
-                  const res = await fetch(`/api/candidates/${candidate.id}/status`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ status: "INTERVIEW", action: "Moved to Interview" })
-                  });
-                  if (res.ok) {
-                    toast.success("Candidate moved to interview", { id: toastId });
-                    fetchCandidate();
-                  } else {
-                    toast.error("Failed to update status", { id: toastId });
+          <div className="flex flex-wrap gap-3 pt-4 border-t border-border/50 mt-4">
+            {stage === "APPLIED" ? (
+              <Button 
+                size="sm" 
+                className="gradient-brand text-white border-0 shadow-md cursor-pointer hover:opacity-90 transition-opacity gap-1.5 px-6"
+                onClick={async () => {
+                  const toastId = toast.loading("Sending Assessment...");
+                  try {
+                    const res = await fetch("/api/outreach/test", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ candidateIds: [candidate.id] })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      toast.success(`Assessment sent automatically ${data.demoMode ? '(Demo Mode)' : ''}`, { id: toastId });
+                      // Also update status to SCREENING/ASSESSMENT
+                      await fetch(`/api/candidates/${candidate.id}/status`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "SCREENING", action: "Triggered Assessment" })
+                      });
+                      fetchCandidate();
+                    } else {
+                      toast.error("Failed to send test link", { id: toastId });
+                    }
+                  } catch (e) {
+                    toast.error("Error sending test link", { id: toastId });
                   }
-                } catch (e) {
-                  toast.error("Error updating status", { id: toastId });
-                }
-              }}
-            >
-              Move to Interview
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-              onClick={async () => {
-                const toastId = toast.loading("Sending test link...");
-                try {
-                  const res = await fetch("/api/outreach/test", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ candidateIds: [candidate.id] })
-                  });
-                  const data = await res.json();
-                  if (res.ok) {
-                    toast.success(`Test link sent successfully ${data.demoMode ? '(Demo Mode)' : ''}`, { id: toastId });
-                    fetchCandidate();
-                  } else {
-                    toast.error("Failed to send test link", { id: toastId });
+                }}
+              >
+                Trigger Assessment
+              </Button>
+            ) : stage === "SCREENING" || stage === "ASSESSMENT" ? (
+              <Button 
+                size="sm" 
+                className="gradient-brand text-white border-0 shadow-md cursor-pointer hover:opacity-90 transition-opacity gap-1.5 px-6"
+                onClick={async () => {
+                  const toastId = toast.loading("Scheduling Interview...");
+                  try {
+                    const res = await fetch("/api/outreach/schedule", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ candidateIds: [candidate.id], summary: "Technical Round" })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      toast.success(`Interview scheduled ${data.demoMode ? '(Demo Mode)' : ''}`, { id: toastId });
+                      await fetch(`/api/candidates/${candidate.id}/status`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ status: "INTERVIEW", action: "Triggered Interview" })
+                      });
+                      fetchCandidate();
+                      
+                      // Direct the user to their Gmail Drafts to review and send the drafted email
+                      if (!data.demoMode) {
+                        window.open('https://mail.google.com/mail/u/0/#drafts', '_blank');
+                      }
+                    } else {
+                      toast.error("Failed to schedule interview", { id: toastId });
+                    }
+                  } catch (e) {
+                    toast.error("Error scheduling interview", { id: toastId });
                   }
-                } catch (e) {
-                  toast.error("Error sending test link", { id: toastId });
-                }
-              }}
-            >
-              Send Assessment
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
-              onClick={async () => {
-                const toastId = toast.loading("Scheduling interview...");
-                try {
-                  const res = await fetch("/api/outreach/schedule", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ candidateIds: [candidate.id], summary: "Technical Round" })
-                  });
-                  const data = await res.json();
-                  if (res.ok) {
-                    toast.success(`Interview scheduled successfully ${data.demoMode ? '(Demo Mode)' : ''}`, { id: toastId });
-                    fetchCandidate();
-                  } else {
-                    toast.error("Failed to schedule interview", { id: toastId });
+                }}
+              >
+                Trigger Interview
+              </Button>
+            ) : stage === "INTERVIEW" ? (
+              <Button 
+                size="sm" 
+                className="gradient-brand text-white border-0 shadow-md cursor-pointer hover:opacity-90 transition-opacity gap-1.5 px-6"
+                onClick={async () => {
+                  const toastId = toast.loading("Moving to Offer...");
+                  try {
+                    const res = await fetch(`/api/candidates/${candidate.id}/status`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ status: "OFFER", action: "Moved to Offer" })
+                    });
+                    if (res.ok) {
+                      toast.success("Moved to Offer stage", { id: toastId });
+                      fetchCandidate();
+                    }
+                  } catch (e) {
+                    toast.error("Error moving to offer", { id: toastId });
                   }
-                } catch (e) {
-                  toast.error("Error scheduling interview", { id: toastId });
-                }
-              }}
-            >
-              Schedule Interview
-            </Button>
-            <Button 
-              size="sm" 
-              variant="secondary" 
-              className="shadow-sm border border-border"
-              onClick={async () => {
-                const toastId = toast.loading("Shortlisting candidate...");
-                try {
-                  const res = await fetch(`/api/candidates/${candidate.id}/status`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ status: "SCREENING", action: "Candidate Shortlisted" })
-                  });
-                  if (res.ok) {
-                    toast.success("Candidate shortlisted", { id: toastId });
-                    fetchCandidate();
-                  } else {
-                    toast.error("Failed to update status", { id: toastId });
-                  }
-                } catch (e) {
-                  toast.error("Error updating status", { id: toastId });
-                }
-              }}
-            >
-              Shortlist
-            </Button>
+                }}
+              >
+                Move to Offer
+              </Button>
+            ) : null}
+
             <Button 
               size="sm" 
               variant="outline" 
-              className="text-red-500 hover:text-red-600 hover:bg-red-500/10 border-border"
+              className="shadow-sm border-border cursor-pointer px-6"
+              onClick={() => toast.success("Candidate kept in active pool.")}
+            >
+              Keep in Pool
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-red-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer px-6"
               onClick={async () => {
                 const toastId = toast.loading("Rejecting candidate...");
                 try {
@@ -330,16 +333,6 @@ export default function CandidateDetailPage({
             >
               Reject
             </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="text-muted-foreground"
-              onClick={async () => {
-                toast.success("Candidate saved for later");
-              }}
-            >
-              Save for Later
-            </Button>
           </div>
         </div>
 
@@ -354,7 +347,7 @@ export default function CandidateDetailPage({
         </ExplainabilityPanel>
       </div>
 
-      <div className="border border-border/40 rounded-xl p-6 bg-card/30">
+      <div className="border border-border/40 rounded-xl p-6 glass bg-card/40 shadow-sm">
         <h3 className="font-semibold text-lg mb-4">Candidate Timeline</h3>
         <ActivityFeed activities={candidate.activities || []} />
       </div>
@@ -369,7 +362,7 @@ export default function CandidateDetailPage({
           
           {/* 4. Project & GitHub Deep Dive */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-border/40 shadow-sm glass bg-card/40">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2"><Code2 className="h-4 w-4 text-primary"/> Best AI Project</CardTitle>
               </CardHeader>
@@ -382,7 +375,7 @@ export default function CandidateDetailPage({
               </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm">
+            <Card className="border-border/40 shadow-sm glass bg-card/40">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4 text-primary"/> Research Work</CardTitle>
               </CardHeader>
@@ -407,7 +400,7 @@ export default function CandidateDetailPage({
         <div className="lg:col-span-1 space-y-6">
           
           {/* 6. Skill Match (High Density Progress Bars) */}
-          <Card className="border-border/40 shadow-sm overflow-hidden">
+          <Card className="border-border/40 shadow-sm overflow-hidden glass bg-card/40">
             <div className="bg-primary/5 border-b border-primary/10 px-6 py-4">
               <h2 className="font-semibold text-primary flex items-center gap-2"><BarChart2 className="h-4 w-4"/> Skill Match</h2>
             </div>
@@ -451,7 +444,7 @@ export default function CandidateDetailPage({
           </Card>
 
           {/* 5. Resume Raw */}
-          <Card className="border-border/40 shadow-sm">
+          <Card className="border-border/40 shadow-sm glass bg-card/40">
             <CardHeader className="pb-3 border-b border-border/40">
               <CardTitle className="text-sm flex items-center gap-2">
                 <FileText className="h-4 w-4 text-muted-foreground" />

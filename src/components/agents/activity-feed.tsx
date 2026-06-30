@@ -47,7 +47,13 @@ export function ActivityFeed({ activities }: { activities: any[] }) {
           <p className="text-sm text-muted-foreground italic">No recent activity recorded.</p>
         ) : (
           <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-muted before:to-transparent">
-            {activities.map((act, index) => (
+            {activities.filter((act, index, arr) => {
+              if (index === 0) return true;
+              const prev = arr[index - 1];
+              // Deduplicate if same agent and event within 5 minutes
+              const timeDiff = Math.abs(new Date(act.timestamp).getTime() - new Date(prev.timestamp).getTime());
+              return !(act.agentName === prev.agentName && act.event === prev.event && timeDiff < 5 * 60 * 1000);
+            }).map((act, index) => (
               <motion.div 
                 key={act.id} 
                 initial={{ opacity: 0, y: 20 }}

@@ -19,8 +19,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       include: { profile: true, githubCache: true, assessments: true },
     });
 
-    if (!candidate || !candidate.profile) {
-      return NextResponse.json({ error: "Candidate or profile not found" }, { status: 404 });
+    if (!candidate) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
     }
 
     let jobData = null;
@@ -43,8 +43,17 @@ Keep your answers very concise, direct, and recruiter-focused (max 2-3 short par
 Support: Summarize Candidate, Compare against JD, Missing Skills, Interview Questions, Hiring Risks, Portfolio Questions, Behavioural Questions, Strengths, Weaknesses.
 If a Job Description is provided, relate your answer to the job requirements.
 
-Candidate Profile:
-${JSON.stringify(candidate.profile, null, 2)}
+Candidate Details:
+Name: ${candidate.name}
+Email: ${candidate.email}
+College: ${candidate.college || 'N/A'}
+Branch: ${candidate.branch || 'N/A'}
+CGPA: ${candidate.cgpa || 'N/A'}
+Best AI Project: ${candidate.bestAiProject || 'N/A'}
+Research Work: ${candidate.researchWork || 'N/A'}
+
+Candidate Profile JSON:
+${candidate.profile ? JSON.stringify(candidate.profile, null, 2) : "No structured profile available."}
 
 GitHub Stats:
 ${JSON.stringify(candidate.githubCache?.data || {}, null, 2)}

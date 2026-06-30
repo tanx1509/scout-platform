@@ -42,7 +42,7 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-border px-4">
+      <Link href="/dashboard" className="flex h-16 items-center gap-3 border-b border-border px-4 hover:bg-muted/50 transition-colors cursor-pointer">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
           <ScoutLogo className="h-6 w-6" />
         </div>
@@ -51,7 +51,7 @@ export function Sidebar() {
             Scout
           </span>
         )}
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">

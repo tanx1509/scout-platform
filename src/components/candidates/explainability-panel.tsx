@@ -6,17 +6,17 @@ import { ReactNode } from "react";
 function TimelineItem({ title, score, children, icon, colorClass, max = 100 }: { title: string, score: number, children: ReactNode, icon?: ReactNode, colorClass?: string, max?: number }) {
   if (score === 0 && !children) return null;
   return (
-    <div className="relative pl-8 pb-8 border-l-2 border-border last:border-0 last:pb-0">
-      <div className={`absolute -left-[11px] top-0 h-5 w-5 rounded-full flex items-center justify-center bg-background border-2 ${colorClass || 'border-primary text-primary'}`}>
+    <div className="relative pl-8 pb-8 border-l-2 border-border/50 last:border-l-transparent last:pb-0">
+      <div className={`absolute -left-[11px] top-0 h-5 w-5 rounded-full flex items-center justify-center border-2 bg-background ${colorClass ? colorClass.split(' ')[0].replace('text-', 'border-') + ' ' + colorClass.split(' ')[0] : 'border-primary/50 text-primary'}`}>
         {icon || <Info className="h-3 w-3" />}
       </div>
       <div className="space-y-3 -mt-1.5">
         <div className="flex justify-between items-center">
           <h4 className="font-semibold">{title}</h4>
-          <span className={`font-bold ${colorClass}`}>{score}{max === 100 ? '' : ''}</span>
+          <span className={`font-bold ${colorClass ? colorClass.split(' ')[0] : 'text-primary'}`}>{score}{max === 100 ? '' : ''}</span>
         </div>
-        <Progress value={max === 100 ? score : (score/max)*100} className="h-1.5" />
-        <ul className="space-y-1.5 text-sm text-muted-foreground mt-2">
+        <Progress value={max === 100 ? score : (score/max)*100} className="h-1.5 bg-muted/50" />
+        <ul className="space-y-2 text-sm text-muted-foreground mt-3">
           {children}
         </ul>
       </div>
@@ -93,7 +93,7 @@ export function ExplainabilityPanel({ match, children, defaultOpen = false }: { 
     return (
       <Sheet defaultOpen={defaultOpen}>
         <SheetTrigger render={children as React.ReactElement} />
-        <SheetContent className="w-[450px] sm:w-[540px] overflow-y-auto">
+        <SheetContent className="w-[450px] sm:w-[540px] sm:max-w-none overflow-y-auto pr-8">
           <SheetHeader className="mb-6">
             <SheetTitle>Explainability Engine</SheetTitle>
             <SheetDescription>
@@ -101,25 +101,25 @@ export function ExplainabilityPanel({ match, children, defaultOpen = false }: { 
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-0 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+          <div className="space-y-0 ml-4 mt-4 mr-2">
             
-            <TimelineItem title="Technical Match (35%)" score={Math.round(tScore)} colorClass="text-blue-600 border-blue-600">
+            <TimelineItem title="Technical Match (35%)" score={Math.round(tScore)} colorClass="text-blue-500 bg-blue-500/10 border-blue-500/20">
               {renderEvidence(ev.technical)}
             </TimelineItem>
 
-            <TimelineItem title="Projects Portfolio (20%)" score={Math.round(pScore)} colorClass="text-emerald-600 border-emerald-600">
+            <TimelineItem title="Projects Portfolio (20%)" score={Math.round(pScore)} colorClass="text-emerald-500 bg-emerald-500/10 border-emerald-500/20">
               {renderEvidence(ev.projects)}
             </TimelineItem>
 
-            <TimelineItem title="Assessments (20%)" score={Math.round(aScore)} colorClass="text-amber-500 border-amber-500">
-              {aScore === 0 ? <li className="text-amber-500 italic">Pending Assessment</li> : renderEvidence(ev.assessment)}
+            <TimelineItem title="Assessments (20%)" score={Math.round(aScore)} colorClass="text-amber-500 bg-amber-500/10 border-amber-500/20">
+              {aScore === 0 ? <li className="text-amber-500/70 italic">Pending Assessment</li> : renderEvidence(ev.assessment)}
             </TimelineItem>
 
-            <TimelineItem title="GitHub Strength (15%)" score={Math.round(gScore)} colorClass="text-slate-700 border-slate-700">
+            <TimelineItem title="GitHub Strength (15%)" score={Math.round(gScore)} colorClass="text-slate-400 bg-slate-500/10 border-slate-500/20">
                {gScore === 0 ? <li className="text-slate-500 italic">Not Provided</li> : renderEvidence(ev.github)}
             </TimelineItem>
 
-            <TimelineItem title="Research & Academics (10%)" score={Math.round(rScore)} colorClass="text-indigo-600 border-indigo-600">
+            <TimelineItem title="Research & Academics (10%)" score={Math.round(rScore)} colorClass="text-indigo-400 bg-indigo-500/10 border-indigo-500/20">
               {renderEvidence(ev.research)}
             </TimelineItem>
 
@@ -128,7 +128,7 @@ export function ExplainabilityPanel({ match, children, defaultOpen = false }: { 
                 title="Risk Penalty" 
                 score={-Math.round(penalty)} 
                 icon={<AlertTriangle className="h-3 w-3" />}
-                colorClass="text-red-500 border-red-500"
+                colorClass="text-red-500 bg-red-500/10 border-red-500/20"
               >
                 {risks?.map((risk: any, i: number) => (
                   <li key={i} className="flex items-start gap-2">
@@ -139,8 +139,8 @@ export function ExplainabilityPanel({ match, children, defaultOpen = false }: { 
               </TimelineItem>
             )}
 
-            <div className="relative pl-8 pt-4 pb-4">
-              <div className="absolute -left-[11px] top-4 h-5 w-5 rounded-full flex items-center justify-center bg-primary border-2 border-primary text-primary-foreground">
+            <div className="relative pl-8 pt-4 pb-4 border-l-2 border-transparent">
+              <div className="absolute -left-[11px] top-4 h-5 w-5 rounded-full flex items-center justify-center border-2 border-primary bg-background text-primary">
                 <CheckCircle2 className="h-3 w-3" />
               </div>
               <div className="flex justify-between items-center text-lg">

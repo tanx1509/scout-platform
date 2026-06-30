@@ -9,8 +9,17 @@ export class DocumentParserTool implements Tool {
 
       if (!content && input.fileUrl) {
         try {
+          // Check if it's a Google Drive link and convert it to a direct download link
+          let downloadUrl = input.fileUrl;
+          if (downloadUrl.includes("drive.google.com/file/d/")) {
+            const fileIdMatch = downloadUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (fileIdMatch && fileIdMatch[1]) {
+              downloadUrl = `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+            }
+          }
+
           // Attempt to download the file
-          const response = await fetch(input.fileUrl);
+          const response = await fetch(downloadUrl);
           if (!response.ok) {
             throw new Error(`Failed to fetch file: ${response.statusText}`);
           }
@@ -20,8 +29,7 @@ export class DocumentParserTool implements Tool {
           
           // Try parsing as PDF
           try {
-            const pdfParseModule = await import('pdf-parse');
-            const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+            const pdfParse = require('pdf-parse');
             const pdfData = await pdfParse(buffer);
             content = pdfData.text;
           } catch (pdfError) {
@@ -39,6 +47,8 @@ export class DocumentParserTool implements Tool {
       if (!content) {
         throw new Error("No content could be extracted from the document.");
       }
+      // Sanitize text to remove null bytes (\x00) which break PostgreSQL inserts
+      content = content.replace(/\0/g, '');
       
       const parsedData = {
         text: content,

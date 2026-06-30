@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { UploadModal } from "@/components/upload/upload-modal";
 import { ActivityFeed } from "@/components/agents/activity-feed";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FunnelStats {
   uploaded: number;
@@ -68,45 +69,60 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchData}
-            className="gap-1.5"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={async () => {
-              const toastId = toast.loading("Initializing intelligence agents...");
-              try {
-                const res = await fetch('/api/orchestrator/batch', { method: 'POST' });
-                if (res.ok) {
-                  toast.success("Intelligence pipeline triggered", { id: toastId });
-                  fetchData();
-                } else {
-                  toast.error("Failed to trigger pipeline", { id: toastId });
-                }
-              } catch (e) {
-                toast.error("Error triggering pipeline", { id: toastId });
-              }
-            }}
-            className="gap-1.5"
-          >
-            <Brain className="h-3.5 w-3.5" />
-            Initialize Intelligence
-          </Button>
-          <Button
-            className="gradient-brand text-white border-0 hover:opacity-90 transition-opacity gap-1.5"
-            size="sm"
-            onClick={() => setUploadOpen(true)}
-          >
-            <Upload className="h-3.5 w-3.5" />
-            Upload Candidates
-          </Button>
+          <Tooltip>
+            <TooltipTrigger render={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchData}
+                className="gap-1.5"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </Button>
+            } />
+            <TooltipContent>Refresh Dashboard Data</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger render={
+              <Button
+                variant="default"
+                size="sm"
+                onClick={async () => {
+                  const toastId = toast.loading("Initializing intelligence agents...");
+                  try {
+                    const res = await fetch('/api/orchestrator/batch', { method: 'POST' });
+                    if (res.ok) {
+                      toast.success("Intelligence pipeline triggered", { id: toastId });
+                      fetchData();
+                    } else {
+                      toast.error("Failed to trigger pipeline", { id: toastId });
+                    }
+                  } catch (e) {
+                    toast.error("Error triggering pipeline", { id: toastId });
+                  }
+                }}
+                className="gap-1.5"
+              >
+                <Brain className="h-3.5 w-3.5" />
+                Initialize Intelligence
+              </Button>
+            } />
+            <TooltipContent>Run Evaluation and GitHub Agents</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger render={
+              <Button
+                className="gradient-brand text-white border-0 hover:opacity-90 transition-opacity gap-1.5"
+                size="sm"
+                onClick={() => setUploadOpen(true)}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Upload Candidates
+              </Button>
+            } />
+            <TooltipContent>Upload CSV or Excel Candidates</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

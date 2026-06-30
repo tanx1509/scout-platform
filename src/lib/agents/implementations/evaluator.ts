@@ -1,6 +1,6 @@
 import { Agent, AgentContext, AgentEvent, AgentResult } from "../core/interfaces";
 import { prisma } from "@/lib/db/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { aiProvider } from "@/lib/ai/provider";
 
 export class EvaluatorAgent implements Agent {
   name = "EvaluatorAgent";
@@ -155,17 +155,16 @@ export class EvaluatorAgent implements Agent {
 
       
 
-      if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'fallback') {
+      if (process.env.AI_PROVIDER) {
         try {
-          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const result = await model.generateContent(prompt);
-          let text = result.response.text();
-          text = text.replace(/```json\n/g, '').replace(/```\n/g, '').replace(/```/g, '');
-          output = JSON.parse(text);
-          reasoning.push("Successfully generated LLM evaluation.");
+          const text = await aiProvider.generateText(prompt, "", false);
+          // Clean up markdown just in case the provider wrapped it
+          const cleanedText = text.replace(/```json\n/g, '').replace(/```\n/g, '').replace(/```/g, '');
+          output = JSON.parse(cleanedText);
+          output.fallbackUsed = false;
+          reasoning.push(`Successfully generated LLM evaluation using ${process.env.AI_PROVIDER}.`);
         } catch (e) {
-          console.error("Gemini evaluation failed, falling back:", e);
+          console.error("Evaluation failed, falling back:", e);
           output = getDeterministicFallback();
         }
       } else {

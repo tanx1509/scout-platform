@@ -27,27 +27,40 @@ export async function POST() {
 
     let triggeredCount = 0;
 
-    // Trigger pipeline asynchronously (don't block the request)
-    // We process them one by one or concurrently depending on API rate limits.
-    // For this demo, we'll fire them concurrently since it's an assignment.
-    const promises = candidates.map(async (candidate) => {
+    // Process them sequentially with a delay to respect AI provider rate limits
+    for (const candidate of candidates) {
       const jobId = candidate.matches[0]?.jobId;
-        if (!jobId) return;
-        // First, request GitHub analysis
-        const githubEvent: AgentEvent = {
-          id: crypto.randomUUID(),
-          type: "GITHUB_ANALYSIS_REQUESTED",
-          payload: { trigger: "batch_run" },
-          candidateId: candidate.id,
-          jobId: jobId,
-          timestamp: Date.now()
-        };
-        try {
-          await WorkflowCoordinator.dispatch(githubEvent);
-        } catch (err) {
-          console.error(`GitHub analysis failed for candidate ${candidate.id}`, err);
-        }
-      if (!jobId) return;
+      if (!jobId) continue;
+
+      // First, request GitHub analysis
+      const githubEvent: AgentEvent = {
+        id: crypto.randomUUID(),
+        type: "GITHUB_ANALYSIS_REQUESTED",
+        payload: { trigger: "batch_run" },
+        candidateId: candidate.id,
+        jobId: jobId,
+        timestamp: Date.now()
+      };
+      try {
+        await WorkflowCoordinator.dispatch(githubEvent);
+      } catch (err) {
+        console.error(`GitHub analysis failed for candidate ${candidate.id}`, err);
+      }
+
+      // Also trigger resume parsing so it doesn't stay PENDING forever
+      const resumeEvent: AgentEvent = {
+        id: crypto.randomUUID(),
+        type: "RESUME_UPLOADED",
+        payload: { trigger: "batch_run" },
+        candidateId: candidate.id,
+        jobId: jobId,
+        timestamp: Date.now()
+      };
+      try {
+        await WorkflowCoordinator.dispatch(resumeEvent);
+      } catch (err) {
+        console.error(`Resume parsing failed for candidate ${candidate.id}`, err);
+      }
 
       const event: AgentEvent = {
         id: crypto.randomUUID(),
@@ -64,12 +77,10 @@ export async function POST() {
       } catch (err) {
         console.error(`Failed to trigger intelligence for candidate ${candidate.id}`, err);
       }
-    });
-
-    // We don't await all promises here to prevent Vercel timeout on 10+ calls.
-    // However, Node.js background promises might get killed on serverless.
-    // For demo purposes, we will await them, but in production we'd use a queue (Inngest, Quirrel, etc).
-    await Promise.allSettled(promises);
+      
+      // Wait 3 seconds between candidates to avoid rate limits on free AI tiers
+      await new Promise(r => setTimeout(r, 3000));
+    }
 
     return NextResponse.json({ success: true, message: `Triggered intelligence for ${triggeredCount} candidates.` });
   } catch (error) {

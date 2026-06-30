@@ -81,9 +81,33 @@ export function CopilotChat({ candidateId, jobId }: { candidateId: string; jobId
               </div>
             )}
             <div className={`p-3 rounded-lg text-sm max-w-[85%] whitespace-pre-wrap ${
-              m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+              m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted leading-relaxed"
             }`}>
-              {m.content}
+              {m.role === "ai" ? (
+                m.content.split('\n').map((line, i) => {
+                  const parts = line.split(/(\*\*.*?\*\*)/g);
+                  const formattedLine = parts.map((part, j) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return <strong key={j} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                    }
+                    return part;
+                  });
+
+                  if (line.trim().startsWith('- ')) {
+                    return (
+                      <li key={i} className="ml-4 list-disc marker:text-primary/50 mb-1">
+                        {formattedLine.map((f, k) => typeof f === 'string' && k === 0 ? f.replace(/^\s*- /, '') : f)}
+                      </li>
+                    );
+                  }
+                  
+                  if (line.trim() === '') return <br key={i} />;
+
+                  return <span key={i} className="block mb-1.5 last:mb-0">{formattedLine}</span>;
+                })
+              ) : (
+                m.content
+              )}
             </div>
             {m.role === "user" && (
               <div className="h-8 w-8 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center">

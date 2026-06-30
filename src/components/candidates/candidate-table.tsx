@@ -165,7 +165,7 @@ export function CandidateTable({
 
   const renderQuality = (resume: CandidateRow["resume"]) => {
     if (!resume || resume.status === "FAILED") {
-      return <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 border-red-200">Needs Review</span>;
+      return <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700 border-slate-200">Dataset Profile</span>;
     }
     if (resume.status === "PENDING" || resume.status === "PROCESSING") {
       return <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-800 border-gray-200">Processing</span>;
@@ -319,7 +319,6 @@ export function CandidateTable({
                               if (candidate.githubProfile) tags.push({ label: "Open Source", color: "bg-blue-100 text-blue-700 border-blue-200" });
                               if (m?.technicalScore && m.technicalScore >= 85) tags.push({ label: "Strong Coder", color: "bg-green-100 text-green-700 border-green-200" });
                               if (candidate.branch?.toLowerCase().includes("computer") || candidate.branch?.toLowerCase().includes("software")) tags.push({ label: "CS Core", color: "bg-slate-100 text-slate-700 border-slate-200" });
-                              if (tags.length === 0) tags.push({ label: "Needs Review", color: "bg-amber-100 text-amber-700 border-amber-200" });
                               return tags.slice(0, 2).map((t, i) => (
                                 <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded-sm border font-medium ${t.color}`}>
                                   {t.label}
@@ -342,7 +341,7 @@ export function CandidateTable({
                     </TableCell>
                     <TableCell className="text-center">
                       {candidate.cgpa ? (
-                        <span className="text-sm font-semibold">{candidate.cgpa.toFixed(1)}</span>
+                        <span className="text-sm font-semibold">{candidate.cgpa}</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}

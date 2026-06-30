@@ -1,6 +1,6 @@
 import { Agent, AgentContext, AgentEvent, AgentResult } from "../core/interfaces";
 import { prisma } from "@/lib/db/prisma";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { aiProvider } from "@/lib/ai/provider";
 import fetch from "node-fetch";
 
 export class GithubAgent implements Agent {
@@ -111,11 +111,9 @@ export class GithubAgent implements Agent {
       let llmSummary = "Could not generate summary.";
       let score = 50;
 
-      if (reposData.length > 0 && process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'fallback') {
+      if (reposData.length > 0 && process.env.AI_PROVIDER) {
         try {
-          toolsUsed.push("GeminiLLM");
-          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          toolsUsed.push("AIProviderLLM");
 
           const prompt = `
             Analyze the following GitHub repository data for a candidate applying for an AI Engineer position.
@@ -138,8 +136,7 @@ export class GithubAgent implements Agent {
             Format as JSON: { "summary": "...", "score": 85 }
           `;
 
-          const result = await model.generateContent(prompt);
-          const text = result.response.text();
+          const text = await aiProvider.generateText(prompt, "", false);
           
           // Extract JSON
           const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -150,7 +147,7 @@ export class GithubAgent implements Agent {
             reasoning.push("Generated LLM summary of GitHub profile.");
           }
         } catch (e) {
-          console.error("Gemini GitHub analysis failed:", e);
+          console.error("AI GitHub analysis failed:", e);
           reasoning.push("LLM analysis failed, falling back to deterministic scoring.");
           
           // Deterministic fallback score

@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
+import Groq from "groq-sdk";
 
 // -----------------------------------------------------------------------------
 // Provider-Agnostic Interface
@@ -111,6 +112,65 @@ class DummyProvider implements AIProvider {
 }
 
 // -----------------------------------------------------------------------------
+// Groq Provider Implementation
+// -----------------------------------------------------------------------------
+class GroqProvider implements AIProvider {
+  private groq: Groq;
+  private defaultModel: string;
+
+  constructor() {
+    this.groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY || "dummy-key",
+    });
+    this.defaultModel = "llama-3.3-70b-versatile";
+  }
+
+  async generateText(prompt: string, systemMessage?: string, isJson?: boolean): Promise<string> {
+    if (!process.env.GROQ_API_KEY) {
+      console.warn("Missing GROQ_API_KEY, returning dummy data for generateText.");
+      return isJson ? "{}" : "Dummy AI response.";
+    }
+
+    try {
+      const messages: any[] = [];
+      if (systemMessage) {
+        messages.push({ role: "system", content: systemMessage });
+      }
+      messages.push({ role: "user", content: prompt });
+
+      const response = await this.groq.chat.completions.create({
+        messages,
+        model: this.defaultModel,
+        temperature: 0.1,
+        response_format: isJson ? { type: "json_object" } : undefined,
+      });
+      
+      return response.choices[0]?.message?.content || (isJson ? "{}" : "");
+    } catch (error) {
+      console.error("Groq text generation failed:", error);
+      return isJson ? "{}" : "";
+    }
+  }
+
+  async generateStructuredOutput(prompt: string, systemMessage?: string, schema?: Schema): Promise<any> {
+    const text = await this.generateText(prompt, systemMessage ? systemMessage + "\nPlease output valid JSON." : "Please output valid JSON.", true);
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  async generateEmbedding(text: string): Promise<number[]> {
+    return new Array(768).fill(0.1);
+  }
+
+  async streamText(prompt: string, systemMessage?: string): Promise<any> {
+    throw new Error("streamText not implemented for GroqProvider yet");
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Provider Registry & Resolution
 // -----------------------------------------------------------------------------
 const getProvider = (): AIProvider => {
@@ -119,6 +179,8 @@ const getProvider = (): AIProvider => {
   switch (providerType) {
     case "gemini":
       return new GeminiProvider();
+    case "groq":
+      return new GroqProvider();
     default:
       console.warn(`Unknown AI_PROVIDER: ${providerType}. Falling back to DummyProvider.`);
       return new DummyProvider();
