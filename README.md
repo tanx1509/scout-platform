@@ -1,5 +1,7 @@
 # Nachiketa: Candidate Intelligence Platform
 
+🚀 **Live Demo:** [https://scout-platform-six.vercel.app](https://scout-platform-six.vercel.app)
+
 An enterprise-grade, agent-based candidate screening and intelligence platform built to eliminate recruitment blind spots and accelerate technical hiring.
 
 ![Nachiketa Dashboard Demo Placeholder](docs/dashboard.gif)
